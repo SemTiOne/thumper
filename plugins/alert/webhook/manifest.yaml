@@ -1,0 +1,29 @@
+name: webhook
+kind: alert
+display_name: "Generic webhook"
+version: "0.1.0"
+author: thumper-core
+description: >-
+  When a tripwire fires, Thumper sends one HTTP POST per alert — the event as a
+  JSON body — to a URL you control (a SIEM collector, a Slack/Teams relay, your
+  own endpoint). Add an optional signing secret to make each request verifiable
+  and replay-resistant.
+config_schema:
+  - key: url
+    label: "Webhook URL"
+    type: string
+    required: true
+    placeholder: "https://hooks.example.com/thumper"
+    help: >-
+      Where each alert is delivered. The JSON body includes tripwire_name,
+      endpoint_hostname, accessed_path, process, os_user and timestamp.
+  - key: signing_secret
+    label: "Signing secret"
+    type: secret
+    required: false
+    generate: true
+    help: >-
+      Optional — leave blank to send unsigned. When set, every request carries
+      X-Thumper-Timestamp and X-Thumper-Signature (sha256 = HMAC of "<ts>." + body)
+      so your receiver can confirm it came from Thumper and reject forged or
+      replayed requests. A ready-to-run verifier ships at tools/webhook_test_server.py.

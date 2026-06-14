@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
+venv/
+build/
+dist/
+
+# Thumper runtime
+thumper.db
+thumper.db-wal
+thumper.db-shm
+data/
+
+# Node / UI
+node_modules/
+ui/dist/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+
+# AI working artifacts
+docs/superpowers/

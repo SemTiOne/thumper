@@ -1,0 +1,42 @@
+[project]
+name = "thumper"
+version = "0.1.0"
+description = "Detect endpoint compromise with honeytoken tripwires — plant fake credentials where the Shai-Hulud npm worm scans, alert on read."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+dependencies = [
+  "fastapi>=0.110",
+  "uvicorn[standard]>=0.27",
+  "pyyaml>=6.0",
+  "httpx>=0.27",
+  "sqlalchemy>=2.0",
+  "alembic>=1.13",
+]
+
+[project.optional-dependencies]
+# The endpoint agent is a standalone Bash script (agent/thumper_agent.sh) using
+# only curl + openssl — it has no Python dependencies of its own.
+postgres = ["psycopg[binary]>=3.1"]
+mysql = ["pymysql>=1.1"]
+dev = ["pytest>=8.0"]
+
+[tool.pytest.ini_options]
+# Tests import `thumper`, which lives under server/. Put it on the path here so
+# `pytest` works from a clean checkout without requiring an editable install.
+testpaths = ["tests"]
+pythonpath = ["server"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = { "" = "server" }
+
+[tool.setuptools.packages.find]
+where = ["server"]
+
+[tool.setuptools.package-data]
+"thumper.migrations" = ["*.py", "*.mako", "*.ini"]
+"thumper.migrations.versions" = ["*.py"]

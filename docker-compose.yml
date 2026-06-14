@@ -1,0 +1,14 @@
+services:
+  thumper:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      # Endpoints must be able to reach this URL's /api/trigger callback.
+      - THUMPER_BASE_URL=http://localhost:8000
+      - THUMPER_DB=/app/data/thumper.db
+    volumes:
+      - thumper-data:/app/data
+
+volumes:
+  thumper-data:

@@ -1,0 +1,21 @@
+name: loki
+kind: alert
+display_name: "Loki"
+version: "0.1.0"
+author: thumper-core
+description: "Pushes a structured log event to Loki whenever a tripwire fires."
+config_schema:
+  - key: loki_url
+    label: "Loki push URL"
+    type: string
+    required: true
+    placeholder: "https://logs.yourorg.com/loki/api/v1/push"
+  - key: api_key
+    label: "API key"
+    type: secret
+    required: false
+  - key: labels
+    label: "Extra labels"
+    type: string
+    required: false
+    placeholder: "team=secops,env=prod"

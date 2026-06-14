@@ -1,0 +1,31 @@
+name: mdm
+kind: deploy
+display_name: "MDM (Jamf Pro)"
+version: "0.1.0"
+author: thumper-core
+description: >-
+  Pushes the agent + honeytoken to managed Macs by upserting a Jamf Pro script
+  and a policy scoped to a smart group (recurring check-in trigger). Requires
+  Jamf Pro — the scripts/policies/smart-groups API this uses does not exist in
+  Jamf Now, Jamf School, or other MDMs; on those, copy the install command and
+  distribute it yourself (paste on the endpoint, or push via that MDM).
+config_schema:
+  - key: base_url
+    label: "Jamf Pro base URL"
+    type: string
+    required: true
+    placeholder: "https://yourorg.jamfcloud.com"
+    help: "Your Jamf Pro tenant URL. This plugin supports Jamf Pro only."
+  - key: client_id
+    label: "API client ID"
+    type: string
+    required: true
+  - key: client_secret
+    label: "API client secret"
+    type: secret
+    required: true
+  - key: smart_group
+    label: "Target smart group"
+    type: string
+    required: true
+    help: "Name of the Jamf smart computer group the install policy is scoped to."

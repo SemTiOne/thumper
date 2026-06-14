@@ -1,0 +1,28 @@
+import { Link } from "react-router-dom";
+
+// Catch-all for unknown client routes. Real pages refresh fine (the server
+// serves index.html and React renders them); only genuinely unknown paths fall
+// through to here. The looping GIF is the same asset the sidebar uses.
+export default function NotFound() {
+  return (
+    <div
+      style={{
+        minHeight: "70vh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: "1.5rem",
+        textAlign: "center",
+      }}
+    >
+      <img src="/thumper_gif.gif" alt="Thumper" style={{ width: 180, height: "auto" }} />
+      <h1 style={{ margin: 0, fontSize: "2.25rem", letterSpacing: ".12em" }}>
+        404 — Not Found
+      </h1>
+      <Link to="/" style={{ color: "#7c9cff", textDecoration: "none" }}>
+        ← back to Thumper
+      </Link>
+    </div>
+  );
+}

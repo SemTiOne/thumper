@@ -1,0 +1,28 @@
+name: splunk
+kind: alert
+display_name: "Splunk (HEC)"
+version: "0.1.0"
+author: thumper-core
+description: >-
+  Sends each fired-tripwire event to Splunk via the HTTP Event Collector (HEC) as
+  suspicious credential-access behavior. A SIEM destination.
+config_schema:
+  - key: hec_url
+    label: "HEC URL"
+    type: string
+    required: true
+    placeholder: "https://splunk.yourorg.com:8088/services/collector/event"
+  - key: hec_token
+    label: "HEC token"
+    type: secret
+    required: true
+  - key: index
+    label: "Index"
+    type: string
+    required: false
+    placeholder: "security"
+  - key: sourcetype
+    label: "Sourcetype"
+    type: string
+    required: false
+    placeholder: "thumper:alert"
