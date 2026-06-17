@@ -175,28 +175,83 @@ def create_alert(db: Session, *, deployment_id: str, tripwire_id: str,
     return row
 
 
-def list_alerts(db: Session) -> list[Alert]:
-    return db.query(Alert).order_by(Alert.timestamp.desc()).all()
+def list_alerts(db: Session, status: Optional[str] = None) -> list[Alert]:
+    """All alerts, newest first. `status` optionally filters to "open"
+    (unresolved) or "resolved". An unrecognized value is a caller bug, not a
+    silent "return everything" - so it raises."""
+    q = db.query(Alert)
+    if status == "open":
+        q = q.filter(Alert.resolved_at.is_(None))
+    elif status == "resolved":
+        q = q.filter(Alert.resolved_at.isnot(None))
+    elif status is not None:
+        raise ValueError(f"invalid alert status filter: {status!r}")
+    return q.order_by(Alert.timestamp.desc()).all()
 
 
+def get_alert(db: Session, aid: str) -> Optional[Alert]:
+    return db.query(Alert).filter(Alert.id == aid).first()
+
+
+def resolve_alert(db: Session, aid: str) -> Optional[Alert]:
+    """Mark one alert resolved and return it. Idempotent; returns None if the id
+    is unknown (so the caller has the row without a second query)."""
+    alert = db.query(Alert).filter(Alert.id == aid).first()
+    if alert is None:
+        return None
+    if alert.resolved_at is None:
+        alert.resolved_at = iso_now()
+        db.commit()
+    return alert
+
+
+def resolve_deployment_alerts(db: Session, did: str) -> int:
+    """Resolve every open alert for a deployment. Returns how many were newly
+    resolved (already-resolved alerts are left untouched and not counted)."""
+    n = db.query(Alert).filter(
+        Alert.deployment_id == did, Alert.resolved_at.is_(None),
+    ).update({Alert.resolved_at: iso_now()})
+    db.commit()
+    return n
+
+
+def resolve_all_alerts(db: Session) -> int:
+    """Resolve every open alert in one statement. Returns the count resolved."""
+    n = db.query(Alert).filter(Alert.resolved_at.is_(None)) \
+        .update({Alert.resolved_at: iso_now()})
+    db.commit()
+    return n
+
+
+# The alert rollups below all count only OPEN (unresolved) alerts, so every
+# "triggered" badge and the 24h count across the UI clear in lockstep with the
+# dashboard's active count once an operator resolves them.
 def count_alerts_for_tripwire(db: Session, tripwire_id: str) -> int:
-    return db.query(Alert).filter(Alert.tripwire_id == tripwire_id).count()
+    return db.query(Alert).filter(
+        Alert.tripwire_id == tripwire_id, Alert.resolved_at.is_(None)).count()
 
 
 def count_alerts_for_endpoint(db: Session, endpoint_id: str) -> int:
-    return db.query(Alert).filter(Alert.endpoint_id == endpoint_id).count()
+    return db.query(Alert).filter(
+        Alert.endpoint_id == endpoint_id, Alert.resolved_at.is_(None)).count()
 
 
 def count_alerts_for_deployment(db: Session, deployment_id: str) -> int:
-    return db.query(Alert).filter(Alert.deployment_id == deployment_id).count()
+    return db.query(Alert).filter(
+        Alert.deployment_id == deployment_id, Alert.resolved_at.is_(None)).count()
 
 
 def count_alerts_since(db: Session, cutoff_iso: str) -> int:
-    return db.query(Alert).filter(Alert.timestamp >= cutoff_iso).count()
+    """Open alerts fired since the cutoff. Resolving one drops it from the count."""
+    return db.query(Alert).filter(
+        Alert.timestamp >= cutoff_iso, Alert.resolved_at.is_(None)).count()
 
 
 def count_distinct_alert_deployments(db: Session) -> int:
-    return db.query(func.count(distinct(Alert.deployment_id))).scalar() or 0
+    """Deployments with at least one OPEN alert - i.e. still-active triggers.
+    Resolving a deployment's alerts removes it from this count."""
+    return db.query(func.count(distinct(Alert.deployment_id))).filter(
+        Alert.resolved_at.is_(None)).scalar() or 0
 
 
 # ── batched counts (avoid N+1 in list endpoints) ─────────────────────────────
@@ -214,13 +269,13 @@ def deployment_counts_by_endpoint(db: Session) -> dict[str, int]:
 
 def alert_counts_by_tripwire(db: Session) -> dict[str, int]:
     rows = db.query(Alert.tripwire_id, func.count(Alert.id)) \
-        .group_by(Alert.tripwire_id).all()
+        .filter(Alert.resolved_at.is_(None)).group_by(Alert.tripwire_id).all()
     return {tid: n for tid, n in rows}
 
 
 def alert_counts_by_endpoint(db: Session) -> dict[str, int]:
     rows = db.query(Alert.endpoint_id, func.count(Alert.id)) \
-        .group_by(Alert.endpoint_id).all()
+        .filter(Alert.resolved_at.is_(None)).group_by(Alert.endpoint_id).all()
     return {eid: n for eid, n in rows}
 
 
