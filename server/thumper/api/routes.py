@@ -103,6 +103,17 @@ def _endpoint_status(last_seen: str | None) -> str:
     return "inactive"
 
 
+def _endpoint_status_full(endpoint) -> str:
+    """Liveness status for an endpoint, including the decommissioning override and
+    the missing-endpoint case. Single source of truth so _endpoint_out and
+    _deployment_out can't drift if a new status is ever added."""
+    if endpoint is None:
+        return "inactive"
+    if endpoint.decommission_requested_at:
+        return "decommissioning"
+    return _endpoint_status(endpoint.last_seen)
+
+
 def _tripwire_out(db, tripwire, *, deployed_count=None, triggered_count=None) -> TripwireOut:
     if deployed_count is None:
         deployed_count = len(store.list_deployments_for_tripwire(db, tripwire.id))
@@ -119,6 +130,7 @@ def _tripwire_out(db, tripwire, *, deployed_count=None, triggered_count=None) ->
 
 def _deployment_out(db, deployment) -> DeploymentOut:
     endpoint = store.get_endpoint(db, deployment.endpoint_id)
+    endpoint_status = _endpoint_status_full(endpoint)
     return DeploymentOut(
         id=deployment.id, tripwire_id=deployment.tripwire_id,
         endpoint_id=deployment.endpoint_id,
@@ -126,6 +138,7 @@ def _deployment_out(db, deployment) -> DeploymentOut:
         state=deployment.state, created_at=deployment.created_at,
         last_triggered=deployment.last_triggered,
         triggered_count=store.count_alerts_for_deployment(db, deployment.id),
+        endpoint_status=endpoint_status,
     )
 
 
@@ -138,8 +151,7 @@ def _endpoint_out(db, endpoint, *, deployment_count=None, triggered_count=None) 
     return EndpointOut(
         id=endpoint_id, hostname=endpoint.hostname, platform=endpoint.platform,
         enrolled_at=endpoint.enrolled_at, last_seen=endpoint.last_seen,
-        status="decommissioning" if endpoint.decommission_requested_at
-        else _endpoint_status(endpoint.last_seen),
+        status=_endpoint_status_full(endpoint),
         deployment_count=deployment_count,
         triggered_count=triggered_count,
     )
