@@ -6,7 +6,6 @@ a second start while one is alive exits 0 without enrolling; a stale/foreign loc
 is reclaimed.
 """
 import http.server
-import os
 import signal
 import subprocess
 import threading

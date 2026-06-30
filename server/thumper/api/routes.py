@@ -8,7 +8,6 @@ Two distinct contracts live here:
     no JSON parser). See docs/architecture.md.
 """
 import hmac
-import json
 import logging
 from datetime import datetime, timedelta, timezone
 from urllib.parse import parse_qs, urlparse
